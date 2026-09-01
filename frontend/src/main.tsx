@@ -18,6 +18,7 @@ import { TopProductsTable } from './components/TopProductsTable'
 import { inr, metric, s } from './lib/format'
 import type { DashboardData, FilterOptions, GlobalFilters } from './types'
 import './styles.css'
+import './polish.css'
 
 function App() {
   const [data, setData] = useState<DashboardData | null>(null)
