@@ -93,11 +93,19 @@ class SalesAnalytics:
     def get_region_performance(self, frame: DataFrame | None = None) -> list[dict[str, Any]]:
         return self._performance("region", frame)
 
-    def get_top_products(self, frame: DataFrame | None = None, limit: int = 10) -> list[dict[str, Any]]:
+    def get_top_products(self, frame: DataFrame | None = None, limit: int = 10, sort_by: str = "revenue") -> list[dict[str, Any]]:
         frame = frame if frame is not None else self.sales
         products = frame.groupBy("product_id", "product_name", "category").agg(F.sum("revenue").alias("revenue"), F.sum("profit").alias("profit"), F.countDistinct("transaction_id").alias("orders"), F.sum("quantity").alias("units_sold"))
-        ranked = products.withColumn("rank", F.row_number().over(Window.orderBy(F.desc("revenue"), F.asc("product_name")))).filter(F.col("rank") <= limit).orderBy("rank")
+        metric = {"revenue": "revenue", "profit": "profit", "units_sold": "units_sold"}.get(sort_by, "revenue")
+        ranked = products.withColumn("rank", F.row_number().over(Window.orderBy(F.desc(metric), F.asc("product_name")))).filter(F.col("rank") <= limit).orderBy("rank")
         return _records(ranked)
+
+    def get_product_summary(self, frame: DataFrame | None = None) -> dict[str, Any]:
+        frame = frame if frame is not None else self.sales
+        totals = frame.agg(F.sum("revenue").alias("total_product_revenue"), F.sum("profit").alias("total_product_profit"), F.sum("quantity").alias("units_sold"), F.countDistinct("product_id").alias("number_products")).first().asDict()
+        best = frame.groupBy("category").agg(F.sum("revenue").alias("revenue")).orderBy(F.desc("revenue")).first()
+        totals["best_performing_category"] = best.category if best else "—"
+        return {key: _value(value) for key, value in totals.items()}
 
     def get_top_customers(self, frame: DataFrame | None = None, limit: int = 10) -> list[dict[str, Any]]:
         frame = frame if frame is not None else self.sales

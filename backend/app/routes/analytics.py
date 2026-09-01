@@ -71,8 +71,13 @@ def monthly_profit(filters: ApiFilters = Depends(get_api_filters), service: Sale
 
 
 @router.get("/products/top", response_model=list[AnalyticsRecord])
-def top_products(limit: int = Query(default=10, ge=1, le=50), filters: ApiFilters = Depends(get_api_filters), service: SalesAnalyticsService = Depends(get_analytics_service)) -> list[AnalyticsRecord]:
-    return _list("building top products", lambda: service.analytics.get_top_products(service.analytics.filter_sales(filters), limit=limit))
+def top_products(limit: int = Query(default=10, ge=1, le=50), sort_by: str = Query(default="revenue", pattern="^(revenue|profit|units_sold)$"), filters: ApiFilters = Depends(get_api_filters), service: SalesAnalyticsService = Depends(get_analytics_service)) -> list[AnalyticsRecord]:
+    return _list("building top products", lambda: service.analytics.get_top_products(service.analytics.filter_sales(filters), limit=limit, sort_by=sort_by))
+
+
+@router.get("/products/summary", response_model=AnalyticsRecord)
+def product_summary(filters: ApiFilters = Depends(get_api_filters), service: SalesAnalyticsService = Depends(get_analytics_service)) -> AnalyticsRecord:
+    return AnalyticsRecord.model_validate(service.analytics.get_product_summary(service.analytics.filter_sales(filters)))
 
 
 @router.get("/products/categories", response_model=list[AnalyticsRecord])
