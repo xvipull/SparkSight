@@ -5,7 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import get_settings
 from app.schemas import AnalyticsFilters, DashboardResponse, FilterOptions
-from app.services.spark_service import SalesAnalyticsService, get_spark
+from app.services.spark_service import SalesAnalyticsService
+from app.spark_session import get_spark_session, stop_spark_session
 
 settings = get_settings()
 analytics = SalesAnalyticsService()
@@ -13,9 +14,9 @@ analytics = SalesAnalyticsService()
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    get_spark()
+    get_spark_session()
     yield
-    get_spark().stop()
+    stop_spark_session()
 
 
 app = FastAPI(title="SparkSight API", description="Apache Spark-powered sales analytics for SparkSight.", version="1.0.0", lifespan=lifespan)
