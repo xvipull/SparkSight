@@ -74,6 +74,8 @@ class SalesAnalytics:
             F.sum("revenue").alias("revenue"), F.sum("cost").alias("cost"), F.sum("profit").alias("profit"),
             F.countDistinct("transaction_id").alias("orders"), F.countDistinct("customer_id").alias("customers"), F.sum("quantity").alias("units_sold"),
             F.round(F.avg("profit_margin"), 2).alias("average_profit_margin"),
+            F.round(F.sum("revenue") / F.countDistinct("transaction_id"), 2).alias("average_order_value"),
+            F.round(F.sum("profit") / F.sum("revenue") * 100, 2).alias("profit_margin"),
         ).orderBy(F.desc("revenue")))
 
     def get_monthly_sales(self, frame: DataFrame | None = None) -> list[dict[str, Any]]:
