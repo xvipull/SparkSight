@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import math
 from datetime import date, datetime
 from typing import Any
 
@@ -19,7 +20,7 @@ def _value(value: Any) -> Any:
     if isinstance(value, (date, datetime)):
         return value.isoformat()
     if isinstance(value, float):
-        return round(value, 2)
+        return round(value, 2) if math.isfinite(value) else 0.0
     return value
 
 
@@ -104,7 +105,7 @@ class SalesAnalytics:
 
     def get_product_summary(self, frame: DataFrame | None = None) -> dict[str, Any]:
         frame = frame if frame is not None else self.sales
-        totals = frame.agg(F.sum("revenue").alias("total_product_revenue"), F.sum("profit").alias("total_product_profit"), F.sum("quantity").alias("units_sold"), F.countDistinct("product_id").alias("number_products")).first().asDict()
+        totals = frame.agg(F.coalesce(F.sum("revenue"), F.lit(0.0)).alias("total_product_revenue"), F.coalesce(F.sum("profit"), F.lit(0.0)).alias("total_product_profit"), F.coalesce(F.sum("quantity"), F.lit(0)).alias("units_sold"), F.countDistinct("product_id").alias("number_products")).first().asDict()
         best = frame.groupBy("category").agg(F.sum("revenue").alias("revenue")).orderBy(F.desc("revenue")).first()
         totals["best_performing_category"] = best.category if best else "—"
         return {key: _value(value) for key, value in totals.items()}
@@ -119,9 +120,9 @@ class SalesAnalytics:
         frame = frame if frame is not None else self.sales
         customer_orders = frame.groupBy("customer_id").agg(F.sum("revenue").alias("customer_revenue"), F.countDistinct("transaction_id").alias("customer_orders"))
         metrics = customer_orders.agg(
-            F.count("customer_id").alias("total_customers"), F.avg("customer_revenue").alias("average_revenue_per_customer"),
-            F.avg(F.col("customer_revenue") / F.col("customer_orders")).alias("average_order_value"),
-            (F.avg(F.when(F.col("customer_orders") > 1, 1.0).otherwise(0.0)) * 100).alias("returning_customer_rate"),
+            F.count("customer_id").alias("total_customers"), F.coalesce(F.avg("customer_revenue"), F.lit(0.0)).alias("average_revenue_per_customer"),
+            F.coalesce(F.avg(F.col("customer_revenue") / F.col("customer_orders")), F.lit(0.0)).alias("average_order_value"),
+            F.coalesce(F.avg(F.when(F.col("customer_orders") > 1, 1.0).otherwise(0.0)) * 100, F.lit(0.0)).alias("returning_customer_rate"),
         ).first().asDict()
         return {key: _value(value) for key, value in metrics.items()}
 
