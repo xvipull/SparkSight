@@ -1,0 +1,3 @@
+import type { AnalyticsRow } from '../types'
+import { inr, n, s } from '../lib/format'
+export function TopProductsTable({ products }: { products: AnalyticsRow[] }) { if (!products.length) return <div className="empty-state">No products match the current data selection.</div>; return <div className="products-table">{products.map((product, index) => <div className="product-row" key={s(product, 'product_id')}><b>{String(index + 1).padStart(2, '0')}</b><div className="product-name"><strong>{s(product, 'product_name')}</strong><small>{s(product, 'category')} · {n(product, 'orders').toLocaleString('en-IN')} orders</small></div><div><span>{inr(n(product, 'revenue'))}</span><small className="positive">{inr(n(product, 'profit'))} profit</small></div></div>)}</div> }

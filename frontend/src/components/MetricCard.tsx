@@ -1,0 +1,2 @@
+import type { LucideIcon } from 'lucide-react'
+export function MetricCard({ icon: Icon, label, value, detail, tone = 'blue' }: { icon: LucideIcon; label: string; value: string; detail: string; tone?: 'blue' | 'green' | 'red' | 'amber' }) { return <article className="metric-card"><div className={`metric-icon ${tone}`}><Icon size={17}/></div><p>{label}</p><h2>{value}</h2><small>{detail}</small></article> }

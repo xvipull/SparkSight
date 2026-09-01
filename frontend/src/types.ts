@@ -1,8 +1,3 @@
-export interface Metric { name: string; revenue: number; profit: number; orders: number }
-export interface DashboardData {
-  filters: { regions: string[]; categories: string[]; min_date: string; max_date: string }
-  kpis: { revenue: number; profit: number; orders: number; units_sold: number; profit_margin: number; average_order_value: number }
-  revenue_trend: { period: string; revenue: number; profit: number; orders: number }[]
-  category_performance: Metric[]; regional_performance: Metric[]; top_products: Metric[]
-  transactions: { order_id: string; order_date: string; region: string; category: string; product: string; customer: string; quantity: number; revenue: number; profit: number }[]
-}
+export type AnalyticsRow = Record<string, string | number | null>
+export interface Overview { totalRevenue: number; totalProfit: number; totalOrders: number; averageOrderValue: number; totalCustomers: number; unitsSold: number; profitMargin: number; returnRate: number }
+export interface DashboardData { overview: Overview; monthlySales: AnalyticsRow[]; monthlyProfit: AnalyticsRow[]; categories: AnalyticsRow[]; regions: AnalyticsRow[]; products: AnalyticsRow[]; segments: AnalyticsRow[]; channels: AnalyticsRow[]; orderStatus: AnalyticsRow[] }

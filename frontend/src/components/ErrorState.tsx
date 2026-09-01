@@ -1,0 +1,2 @@
+import { RefreshCw, TriangleAlert } from 'lucide-react'
+export function ErrorState({ retry }: { retry: () => void }) { return <div className="error-state"><TriangleAlert size={30}/><h2>Analytics are temporarily unavailable</h2><p>SparkSight could not load the latest distributed analytics. Check that the API and Spark worker are running.</p><button onClick={retry}><RefreshCw size={15}/> Retry connection</button></div> }

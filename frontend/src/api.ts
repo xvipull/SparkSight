@@ -1,13 +1,3 @@
-import type { DashboardData } from './types'
-
-export type DashboardQuery = { start_date?: string; end_date?: string; regions: string[]; categories: string[] }
-export async function getDashboard(query: DashboardQuery): Promise<DashboardData> {
-  const params = new URLSearchParams()
-  if (query.start_date) params.set('start_date', query.start_date)
-  if (query.end_date) params.set('end_date', query.end_date)
-  query.regions.forEach(value => params.append('regions', value))
-  query.categories.forEach(value => params.append('categories', value))
-  const response = await fetch(`/api/v1/dashboard?${params}`)
-  if (!response.ok) throw new Error('SparkSight could not load analytics.')
-  return response.json()
-}
+import type { AnalyticsRow, DashboardData, Overview } from './types'
+async function request<T>(path: string): Promise<T> { const response = await fetch(path); if (!response.ok) throw new Error(`Analytics request failed (${response.status})`); return response.json() as Promise<T> }
+export async function loadDashboard(): Promise<DashboardData> { const [overview, monthlySales, monthlyProfit, categories, regions, products, segments, channels, orderStatus] = await Promise.all([request<Overview>('/api/overview'), request<AnalyticsRow[]>('/api/trends/monthly-sales'), request<AnalyticsRow[]>('/api/trends/monthly-profit'), request<AnalyticsRow[]>('/api/products/categories'), request<AnalyticsRow[]>('/api/regions'), request<AnalyticsRow[]>('/api/products/top?limit=8'), request<AnalyticsRow[]>('/api/customers/segments'), request<AnalyticsRow[]>('/api/channels'), request<AnalyticsRow[]>('/api/order-status')]); return { overview, monthlySales, monthlyProfit, categories, regions, products, segments, channels, orderStatus } }
