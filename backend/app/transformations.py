@@ -5,6 +5,8 @@ import logging
 
 from pyspark.sql import DataFrame, functions as F
 
+from app.schemas import ApiFilters
+
 logger = logging.getLogger(__name__)
 
 TEXT_COLUMNS = [
@@ -79,3 +81,21 @@ def clean_and_enrich_sales(raw: DataFrame) -> DataFrame:
     except Exception as exc:
         logger.exception("Sales transformations failed")
         raise RuntimeError("SparkSight could not transform sales data") from exc
+
+
+def apply_sales_filters(frame: DataFrame, filters: ApiFilters) -> DataFrame:
+    """Apply all API filter combinations once, before Spark aggregations are evaluated."""
+    filtered = frame
+    if filters.start_date:
+        filtered = filtered.filter(F.col("order_date") >= F.lit(filters.start_date.isoformat()))
+    if filters.end_date:
+        filtered = filtered.filter(F.col("order_date") <= F.lit(filters.end_date.isoformat()))
+    if filters.region:
+        filtered = filtered.filter(F.lower(F.col("region")) == F.lit(filters.region.strip().lower()))
+    if filters.category:
+        filtered = filtered.filter(F.lower(F.col("category")) == F.lit(filters.category.strip().lower()))
+    if filters.customer_segment:
+        filtered = filtered.filter(F.lower(F.col("customer_segment")) == F.lit(filters.customer_segment.strip().lower()))
+    if filters.sales_channel:
+        filtered = filtered.filter(F.lower(F.col("sales_channel")) == F.lit(filters.sales_channel.strip().lower()))
+    return filtered

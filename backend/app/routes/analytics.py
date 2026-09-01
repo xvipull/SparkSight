@@ -6,8 +6,8 @@ from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from app.dependencies import get_analytics_service
-from app.schemas import AnalyticsFilters, AnalyticsRecord, DashboardResponse, FilterOptions, HealthResponse, OverviewResponse, PipelineStatusResponse
+from app.dependencies import get_analytics_service, get_api_filters
+from app.schemas import AnalyticsFilters, AnalyticsRecord, ApiFilters, DashboardResponse, FilterOptions, HealthResponse, OverviewResponse, PipelineStatusResponse
 from app.services.spark_service import SalesAnalyticsService
 
 logger = logging.getLogger(__name__)
@@ -36,10 +36,18 @@ def pipeline_status(service: SalesAnalyticsService = Depends(get_analytics_servi
         raise _analytics_error("checking pipeline status", exc) from exc
 
 
-@router.get("/overview", response_model=OverviewResponse, summary="Get top-level sales metrics")
-def overview(service: SalesAnalyticsService = Depends(get_analytics_service)) -> OverviewResponse:
+@router.get("/filters", response_model=FilterOptions, summary="List valid global analytics filters")
+def filter_options(service: SalesAnalyticsService = Depends(get_analytics_service)) -> FilterOptions:
     try:
-        metrics = service.analytics.get_overview_metrics()
+        return service.filter_options()
+    except Exception as exc:
+        raise _analytics_error("loading global filters", exc) from exc
+
+
+@router.get("/overview", response_model=OverviewResponse, summary="Get top-level sales metrics")
+def overview(filters: ApiFilters = Depends(get_api_filters), service: SalesAnalyticsService = Depends(get_analytics_service)) -> OverviewResponse:
+    try:
+        metrics = service.analytics.get_overview_metrics(service.analytics.filter_sales(filters))
         return OverviewResponse(**metrics)
     except Exception as exc:
         raise _analytics_error("building overview metrics", exc) from exc
@@ -53,63 +61,63 @@ def _list(operation: str, callback: Any) -> list[AnalyticsRecord]:
 
 
 @router.get("/trends/monthly-sales", response_model=list[AnalyticsRecord])
-def monthly_sales(service: SalesAnalyticsService = Depends(get_analytics_service)) -> list[AnalyticsRecord]:
-    return _list("building monthly sales", service.analytics.get_monthly_sales)
+def monthly_sales(filters: ApiFilters = Depends(get_api_filters), service: SalesAnalyticsService = Depends(get_analytics_service)) -> list[AnalyticsRecord]:
+    return _list("building monthly sales", lambda: service.analytics.get_monthly_sales(service.analytics.filter_sales(filters)))
 
 
 @router.get("/trends/monthly-profit", response_model=list[AnalyticsRecord])
-def monthly_profit(service: SalesAnalyticsService = Depends(get_analytics_service)) -> list[AnalyticsRecord]:
-    return _list("building monthly profit", service.analytics.get_monthly_profit)
+def monthly_profit(filters: ApiFilters = Depends(get_api_filters), service: SalesAnalyticsService = Depends(get_analytics_service)) -> list[AnalyticsRecord]:
+    return _list("building monthly profit", lambda: service.analytics.get_monthly_profit(service.analytics.filter_sales(filters)))
 
 
 @router.get("/products/top", response_model=list[AnalyticsRecord])
-def top_products(limit: int = Query(default=10, ge=1, le=50), service: SalesAnalyticsService = Depends(get_analytics_service)) -> list[AnalyticsRecord]:
-    return _list("building top products", lambda: service.analytics.get_top_products(limit=limit))
+def top_products(limit: int = Query(default=10, ge=1, le=50), filters: ApiFilters = Depends(get_api_filters), service: SalesAnalyticsService = Depends(get_analytics_service)) -> list[AnalyticsRecord]:
+    return _list("building top products", lambda: service.analytics.get_top_products(service.analytics.filter_sales(filters), limit=limit))
 
 
 @router.get("/products/categories", response_model=list[AnalyticsRecord])
-def categories(service: SalesAnalyticsService = Depends(get_analytics_service)) -> list[AnalyticsRecord]:
-    return _list("building category performance", service.analytics.get_category_performance)
+def categories(filters: ApiFilters = Depends(get_api_filters), service: SalesAnalyticsService = Depends(get_analytics_service)) -> list[AnalyticsRecord]:
+    return _list("building category performance", lambda: service.analytics.get_category_performance(service.analytics.filter_sales(filters)))
 
 
 @router.get("/products/subcategories", response_model=list[AnalyticsRecord])
-def subcategories(service: SalesAnalyticsService = Depends(get_analytics_service)) -> list[AnalyticsRecord]:
-    return _list("building subcategory performance", service.analytics.get_subcategory_performance)
+def subcategories(filters: ApiFilters = Depends(get_api_filters), service: SalesAnalyticsService = Depends(get_analytics_service)) -> list[AnalyticsRecord]:
+    return _list("building subcategory performance", lambda: service.analytics.get_subcategory_performance(service.analytics.filter_sales(filters)))
 
 
 @router.get("/customers/top", response_model=list[AnalyticsRecord])
-def top_customers(limit: int = Query(default=10, ge=1, le=50), service: SalesAnalyticsService = Depends(get_analytics_service)) -> list[AnalyticsRecord]:
-    return _list("building top customers", lambda: service.analytics.get_top_customers(limit=limit))
+def top_customers(limit: int = Query(default=10, ge=1, le=50), filters: ApiFilters = Depends(get_api_filters), service: SalesAnalyticsService = Depends(get_analytics_service)) -> list[AnalyticsRecord]:
+    return _list("building top customers", lambda: service.analytics.get_top_customers(service.analytics.filter_sales(filters), limit=limit))
 
 
 @router.get("/customers/segments", response_model=list[AnalyticsRecord])
-def customer_segments(service: SalesAnalyticsService = Depends(get_analytics_service)) -> list[AnalyticsRecord]:
-    return _list("building customer segments", service.analytics.get_customer_segments)
+def customer_segments(filters: ApiFilters = Depends(get_api_filters), service: SalesAnalyticsService = Depends(get_analytics_service)) -> list[AnalyticsRecord]:
+    return _list("building customer segments", lambda: service.analytics.get_customer_segments(service.analytics.filter_sales(filters)))
 
 
 @router.get("/regions", response_model=list[AnalyticsRecord])
-def regions(service: SalesAnalyticsService = Depends(get_analytics_service)) -> list[AnalyticsRecord]:
-    return _list("building regional performance", service.analytics.get_region_performance)
+def regions(filters: ApiFilters = Depends(get_api_filters), service: SalesAnalyticsService = Depends(get_analytics_service)) -> list[AnalyticsRecord]:
+    return _list("building regional performance", lambda: service.analytics.get_region_performance(service.analytics.filter_sales(filters)))
 
 
 @router.get("/channels", response_model=list[AnalyticsRecord])
-def channels(service: SalesAnalyticsService = Depends(get_analytics_service)) -> list[AnalyticsRecord]:
-    return _list("building sales channel performance", service.analytics.get_sales_channels)
+def channels(filters: ApiFilters = Depends(get_api_filters), service: SalesAnalyticsService = Depends(get_analytics_service)) -> list[AnalyticsRecord]:
+    return _list("building sales channel performance", lambda: service.analytics.get_sales_channels(service.analytics.filter_sales(filters)))
 
 
 @router.get("/payment-methods", response_model=list[AnalyticsRecord])
-def payment_methods(service: SalesAnalyticsService = Depends(get_analytics_service)) -> list[AnalyticsRecord]:
-    return _list("building payment-method performance", service.analytics.get_payment_methods)
+def payment_methods(filters: ApiFilters = Depends(get_api_filters), service: SalesAnalyticsService = Depends(get_analytics_service)) -> list[AnalyticsRecord]:
+    return _list("building payment-method performance", lambda: service.analytics.get_payment_methods(service.analytics.filter_sales(filters)))
 
 
 @router.get("/order-status", response_model=list[AnalyticsRecord])
-def order_status(service: SalesAnalyticsService = Depends(get_analytics_service)) -> list[AnalyticsRecord]:
-    return _list("building order-status distribution", service.analytics.get_order_status_distribution)
+def order_status(filters: ApiFilters = Depends(get_api_filters), service: SalesAnalyticsService = Depends(get_analytics_service)) -> list[AnalyticsRecord]:
+    return _list("building order-status distribution", lambda: service.analytics.get_order_status_distribution(service.analytics.filter_sales(filters)))
 
 
 @router.get("/discount-analysis", response_model=list[AnalyticsRecord])
-def discount_analysis(service: SalesAnalyticsService = Depends(get_analytics_service)) -> list[AnalyticsRecord]:
-    return _list("building discount analysis", service.analytics.get_discount_analysis)
+def discount_analysis(filters: ApiFilters = Depends(get_api_filters), service: SalesAnalyticsService = Depends(get_analytics_service)) -> list[AnalyticsRecord]:
+    return _list("building discount analysis", lambda: service.analytics.get_discount_analysis(service.analytics.filter_sales(filters)))
 
 
 # Dashboard endpoints remain available for the existing React experience while the

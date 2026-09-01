@@ -41,6 +41,8 @@ class AnalyticsRecord(BaseModel):
 class FilterOptions(BaseModel):
     regions: list[str]
     categories: list[str]
+    customer_segments: list[str] = Field(default_factory=list)
+    sales_channels: list[str] = Field(default_factory=list)
     min_date: date
     max_date: date
 
@@ -50,6 +52,17 @@ class AnalyticsFilters(BaseModel):
     end_date: Optional[date] = None
     regions: list[str] = Field(default_factory=list)
     categories: list[str] = Field(default_factory=list)
+    customer_segments: list[str] = Field(default_factory=list)
+    sales_channels: list[str] = Field(default_factory=list)
+
+
+class ApiFilters(BaseModel):
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+    region: Optional[str] = None
+    category: Optional[str] = None
+    customer_segment: Optional[str] = None
+    sales_channel: Optional[str] = None
 
 
 class Kpis(BaseModel):

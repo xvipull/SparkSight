@@ -9,7 +9,8 @@ from pyspark.sql import DataFrame, Window, functions as F
 
 from app.core.config import get_settings
 from app.data_loader import load_sales_data
-from app.transformations import clean_and_enrich_sales
+from app.schemas import ApiFilters
+from app.transformations import apply_sales_filters, clean_and_enrich_sales
 
 logger = logging.getLogger(__name__)
 
@@ -41,23 +42,16 @@ class SalesAnalytics:
             logger.info("Cached cleaned SparkSight sales DataFrame")
         return self._sales
 
-    def filter_sales(self, start_date: date | None = None, end_date: date | None = None, regions: list[str] | None = None, categories: list[str] | None = None) -> DataFrame:
-        frame = self.sales
-        if start_date:
-            frame = frame.filter(F.col("order_date") >= F.lit(start_date.isoformat()))
-        if end_date:
-            frame = frame.filter(F.col("order_date") <= F.lit(end_date.isoformat()))
-        if regions:
-            frame = frame.filter(F.col("region").isin([region.title() for region in regions]))
-        if categories:
-            frame = frame.filter(F.col("category").isin([category.title() for category in categories]))
-        return frame
+    def filter_sales(self, filters: ApiFilters | None = None) -> DataFrame:
+        return apply_sales_filters(self.sales, filters or ApiFilters())
 
     def get_filter_options(self) -> dict[str, Any]:
         bounds = self.sales.agg(F.min("order_date").alias("min_date"), F.max("order_date").alias("max_date")).first()
         return {
             "regions": [row.region for row in self.sales.select("region").distinct().orderBy("region").collect()],
             "categories": [row.category for row in self.sales.select("category").distinct().orderBy("category").collect()],
+            "customer_segments": [row.customer_segment for row in self.sales.select("customer_segment").distinct().orderBy("customer_segment").collect()],
+            "sales_channels": [row.sales_channel for row in self.sales.select("sales_channel").distinct().orderBy("sales_channel").collect()],
             "min_date": _value(bounds.min_date), "max_date": _value(bounds.max_date),
         }
 

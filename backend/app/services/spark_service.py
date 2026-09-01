@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from app.analytics import SalesAnalytics
-from app.schemas import AnalyticsFilters, DashboardResponse, DimensionMetric, FilterOptions, Kpis, Transaction, TrendPoint
+from app.schemas import AnalyticsFilters, ApiFilters, DashboardResponse, DimensionMetric, FilterOptions, Kpis, Transaction, TrendPoint
 
 
 class SalesAnalyticsService:
@@ -17,7 +17,7 @@ class SalesAnalyticsService:
         return [DimensionMetric(name=row[name_field], revenue=row["revenue"], profit=row["profit"], orders=row["orders"]) for row in rows]
 
     def dashboard(self, filters: AnalyticsFilters) -> DashboardResponse:
-        frame = self.analytics.filter_sales(filters.start_date, filters.end_date, filters.regions, filters.categories)
+        frame = self.analytics.filter_sales(ApiFilters(start_date=filters.start_date, end_date=filters.end_date, region=filters.regions[0] if filters.regions else None, category=filters.categories[0] if filters.categories else None, customer_segment=filters.customer_segments[0] if filters.customer_segments else None, sales_channel=filters.sales_channels[0] if filters.sales_channels else None))
         overview = self.analytics.get_overview_metrics(frame)
         monthly_sales = {row["year_month"]: row for row in self.analytics.get_monthly_sales(frame)}
         monthly_profit = {row["year_month"]: row for row in self.analytics.get_monthly_profit(frame)}

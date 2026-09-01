@@ -19,11 +19,11 @@ class _Analytics:
     sales = _Frame()
 
     @staticmethod
-    def get_overview_metrics():
+    def get_overview_metrics(*_: object):
         return {"total_revenue": 1000.0, "total_profit": 250.0, "total_orders": 2, "average_order_value": 500.0, "total_customers": 2, "units_sold": 4, "profit_margin": 25.0, "return_rate": 0.0}
 
     @staticmethod
-    def _rows():
+    def _rows(*_: object, **__: object):
         return [{"category": "Electronics", "revenue": 1000.0, "profit": 250.0, "orders": 2}]
 
     get_monthly_sales = _rows
@@ -38,12 +38,16 @@ class _Analytics:
     get_discount_analysis = _rows
 
     @staticmethod
-    def get_top_products(limit: int = 10):
+    def get_top_products(*_: object, limit: int = 10):
         return _Analytics._rows()[:limit]
 
     @staticmethod
-    def get_top_customers(limit: int = 10):
+    def get_top_customers(*_: object, limit: int = 10):
         return _Analytics._rows()[:limit]
+
+    @staticmethod
+    def filter_sales(*_: object) -> _Frame:
+        return _Frame()
 
 
 def test_requested_api_endpoints_return_json() -> None:
@@ -60,4 +64,5 @@ def test_requested_api_endpoints_return_json() -> None:
         assert response.status_code == 200, response.text
         assert response.headers["content-type"].startswith("application/json")
     assert client.get("/api/overview").json()["totalRevenue"] == 1000.0
+    assert client.get("/api/overview?region=South&category=Electronics&customer_segment=Consumer&sales_channel=Online").status_code == 200
     app.dependency_overrides.clear()
