@@ -50,7 +50,7 @@ def test_requested_api_endpoints_return_json() -> None:
     app.dependency_overrides[get_analytics_service] = lambda: SimpleNamespace(analytics=_Analytics())
     client = TestClient(app)
     endpoints = [
-        "/api/health", "/api/overview", "/api/trends/monthly-sales", "/api/trends/monthly-profit",
+        "/api/health", "/api/pipeline", "/api/overview", "/api/trends/monthly-sales", "/api/trends/monthly-profit",
         "/api/products/top", "/api/products/categories", "/api/products/subcategories", "/api/customers/top",
         "/api/customers/segments", "/api/regions", "/api/channels", "/api/payment-methods", "/api/order-status",
         "/api/discount-analysis",

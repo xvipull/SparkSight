@@ -12,6 +12,15 @@ class HealthResponse(BaseModel):
     analytics_engine: str
 
 
+class PipelineStatusResponse(BaseModel):
+    status: str
+    records_processed: int
+    data_source: str
+    processing_engine: str
+    api: str
+    frontend: str
+
+
 class OverviewResponse(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     total_revenue: float = Field(serialization_alias="totalRevenue")

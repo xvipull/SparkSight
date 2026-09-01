@@ -7,7 +7,7 @@ from typing import Any, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.dependencies import get_analytics_service
-from app.schemas import AnalyticsFilters, AnalyticsRecord, DashboardResponse, FilterOptions, HealthResponse, OverviewResponse
+from app.schemas import AnalyticsFilters, AnalyticsRecord, DashboardResponse, FilterOptions, HealthResponse, OverviewResponse, PipelineStatusResponse
 from app.services.spark_service import SalesAnalyticsService
 
 logger = logging.getLogger(__name__)
@@ -26,6 +26,14 @@ def health(service: SalesAnalyticsService = Depends(get_analytics_service)) -> H
         return HealthResponse(status="healthy", service="SparkSight API", analytics_engine="Apache Spark")
     except Exception as exc:
         raise _analytics_error("checking service health", exc) from exc
+
+
+@router.get("/pipeline", response_model=PipelineStatusResponse, summary="Get distributed pipeline status and processed record count")
+def pipeline_status(service: SalesAnalyticsService = Depends(get_analytics_service)) -> PipelineStatusResponse:
+    try:
+        return PipelineStatusResponse(status="healthy", records_processed=service.analytics.sales.count(), data_source="sales.csv", processing_engine="Apache Spark", api="FastAPI", frontend="React")
+    except Exception as exc:
+        raise _analytics_error("checking pipeline status", exc) from exc
 
 
 @router.get("/overview", response_model=OverviewResponse, summary="Get top-level sales metrics")
