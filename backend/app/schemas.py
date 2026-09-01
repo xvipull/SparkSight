@@ -1,5 +1,32 @@
+from __future__ import annotations
+
 from datetime import date
-from pydantic import BaseModel, Field
+from typing import Any, Optional
+
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class HealthResponse(BaseModel):
+    status: str
+    service: str
+    analytics_engine: str
+
+
+class OverviewResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    total_revenue: float = Field(serialization_alias="totalRevenue")
+    total_profit: float = Field(serialization_alias="totalProfit")
+    total_orders: int = Field(serialization_alias="totalOrders")
+    average_order_value: float = Field(serialization_alias="averageOrderValue")
+    total_customers: int = Field(serialization_alias="totalCustomers")
+    units_sold: int = Field(serialization_alias="unitsSold")
+    profit_margin: float = Field(serialization_alias="profitMargin")
+    return_rate: float = Field(serialization_alias="returnRate")
+
+
+class AnalyticsRecord(BaseModel):
+    """Flexible typed JSON record for dimensional Spark aggregations."""
+    model_config = ConfigDict(extra="allow")
 
 
 class FilterOptions(BaseModel):
@@ -10,8 +37,8 @@ class FilterOptions(BaseModel):
 
 
 class AnalyticsFilters(BaseModel):
-    start_date: date | None = None
-    end_date: date | None = None
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
     regions: list[str] = Field(default_factory=list)
     categories: list[str] = Field(default_factory=list)
 
