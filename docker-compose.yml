@@ -1,0 +1,22 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: sparksight-api
+    environment:
+      SPARKSIGHT_ALLOWED_ORIGINS: http://localhost:5173
+      SPARKSIGHT_DATA_PATH: /app/data/sales_transactions.csv
+      SPARKSIGHT_SPARK_MASTER: local[*]
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data:ro
+
+  web:
+    build: ./frontend
+    container_name: sparksight-web
+    depends_on:
+      - api
+    ports:
+      - "5173:80"

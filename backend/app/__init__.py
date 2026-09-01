@@ -1,0 +1,1 @@
+"""SparkSight FastAPI application."""
