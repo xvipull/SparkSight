@@ -72,7 +72,7 @@ class SalesAnalytics:
         frame = frame if frame is not None else self.sales
         return _records(frame.groupBy(dimension).agg(
             F.sum("revenue").alias("revenue"), F.sum("cost").alias("cost"), F.sum("profit").alias("profit"),
-            F.countDistinct("transaction_id").alias("orders"), F.sum("quantity").alias("units_sold"),
+            F.countDistinct("transaction_id").alias("orders"), F.countDistinct("customer_id").alias("customers"), F.sum("quantity").alias("units_sold"),
             F.round(F.avg("profit_margin"), 2).alias("average_profit_margin"),
         ).orderBy(F.desc("revenue")))
 
@@ -110,7 +110,18 @@ class SalesAnalytics:
     def get_top_customers(self, frame: DataFrame | None = None, limit: int = 10) -> list[dict[str, Any]]:
         frame = frame if frame is not None else self.sales
         customers = frame.groupBy("customer_id", "customer_name", "customer_segment").agg(F.sum("revenue").alias("revenue"), F.sum("profit").alias("profit"), F.countDistinct("transaction_id").alias("orders"))
+        customers = customers.withColumn("average_order_value", F.round(F.col("revenue") / F.col("orders"), 2))
         return _records(customers.orderBy(F.desc("revenue")).limit(limit))
+
+    def get_customer_summary(self, frame: DataFrame | None = None) -> dict[str, Any]:
+        frame = frame if frame is not None else self.sales
+        customer_orders = frame.groupBy("customer_id").agg(F.sum("revenue").alias("customer_revenue"), F.countDistinct("transaction_id").alias("customer_orders"))
+        metrics = customer_orders.agg(
+            F.count("customer_id").alias("total_customers"), F.avg("customer_revenue").alias("average_revenue_per_customer"),
+            F.avg(F.col("customer_revenue") / F.col("customer_orders")).alias("average_order_value"),
+            (F.avg(F.when(F.col("customer_orders") > 1, 1.0).otherwise(0.0)) * 100).alias("returning_customer_rate"),
+        ).first().asDict()
+        return {key: _value(value) for key, value in metrics.items()}
 
     def get_customer_segments(self, frame: DataFrame | None = None) -> list[dict[str, Any]]:
         return self._performance("customer_segment", frame)

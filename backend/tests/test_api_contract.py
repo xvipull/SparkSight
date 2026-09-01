@@ -46,6 +46,10 @@ class _Analytics:
         return {"total_product_revenue": 1000.0, "total_product_profit": 250.0, "units_sold": 4, "number_products": 1, "best_performing_category": "Electronics"}
 
     @staticmethod
+    def get_customer_summary(*_: object):
+        return {"total_customers": 2, "average_revenue_per_customer": 500.0, "average_order_value": 500.0, "returning_customer_rate": 50.0}
+
+    @staticmethod
     def get_top_customers(*_: object, limit: int = 10):
         return _Analytics._rows()[:limit]
 
@@ -59,7 +63,7 @@ def test_requested_api_endpoints_return_json() -> None:
     client = TestClient(app)
     endpoints = [
         "/api/health", "/api/pipeline", "/api/overview", "/api/trends/monthly-sales", "/api/trends/monthly-profit",
-        "/api/products/top", "/api/products/summary", "/api/products/categories", "/api/products/subcategories", "/api/customers/top",
+        "/api/products/top", "/api/products/summary", "/api/products/categories", "/api/products/subcategories", "/api/customers/top", "/api/customers/summary",
         "/api/customers/segments", "/api/regions", "/api/channels", "/api/payment-methods", "/api/order-status",
         "/api/discount-analysis",
     ]

@@ -95,6 +95,11 @@ def top_customers(limit: int = Query(default=10, ge=1, le=50), filters: ApiFilte
     return _list("building top customers", lambda: service.analytics.get_top_customers(service.analytics.filter_sales(filters), limit=limit))
 
 
+@router.get("/customers/summary", response_model=AnalyticsRecord)
+def customer_summary(filters: ApiFilters = Depends(get_api_filters), service: SalesAnalyticsService = Depends(get_analytics_service)) -> AnalyticsRecord:
+    return AnalyticsRecord.model_validate(service.analytics.get_customer_summary(service.analytics.filter_sales(filters)))
+
+
 @router.get("/customers/segments", response_model=list[AnalyticsRecord])
 def customer_segments(filters: ApiFilters = Depends(get_api_filters), service: SalesAnalyticsService = Depends(get_analytics_service)) -> list[AnalyticsRecord]:
     return _list("building customer segments", lambda: service.analytics.get_customer_segments(service.analytics.filter_sales(filters)))
