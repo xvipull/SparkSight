@@ -104,6 +104,17 @@ uvicorn app.main:app --app-dir backend --reload
 
 The API runs at `http://localhost:8000`; Swagger docs are at `http://localhost:8000/docs`.
 
+## Local Development
+
+Copy the environment templates when you need local overrides:
+
+```bash
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
+```
+
+The Vite dev proxy works with an empty `VITE_API_BASE_URL`; set it to `http://localhost:8000` when calling the API directly from the browser.
+
 ## Running Frontend
 
 ```bash
@@ -113,6 +124,35 @@ npm run dev
 ```
 
 Open `http://localhost:5173`.
+
+## Docker
+
+From the project directory:
+
+```bash
+docker compose up --build
+```
+
+This starts the Java 17/PySpark API container on port 8000 and the nginx-served React application on port 5173. The nginx reverse proxy keeps browser API calls same-origin.
+
+## Frontend deployment
+
+Build the static frontend bundle with `npm run build` in `frontend/`, then deploy `frontend/dist/` to any static host. Set `VITE_API_BASE_URL` before building when the API is hosted on a different origin, for example `https://api.example.com`.
+
+## Backend deployment
+
+Build and run the backend image with Docker Compose or the backend Dockerfile. The image includes Java 17 and PySpark. Configure `SPARKSIGHT_ALLOWED_ORIGINS` with the exact browser origin(s), and set `SPARKSIGHT_DATA_PATH` to the mounted CSV path.
+
+## Environment variables
+
+| Variable | Component | Purpose |
+| --- | --- | --- |
+| `VITE_API_BASE_URL` | Frontend | API origin; empty uses the Vite/nginx proxy |
+| `SPARKSIGHT_ALLOWED_ORIGINS` | Backend | Comma-separated allowed browser origins |
+| `SPARKSIGHT_DATA_PATH` | Backend | CSV path, relative to the deployment root or absolute |
+| `SPARKSIGHT_SPARK_MASTER` | Backend | Spark master, default `local[*]` |
+
+Templates are provided in `backend/.env.example` and `frontend/.env.example`; they contain no secrets.
 
 ## API Endpoints
 

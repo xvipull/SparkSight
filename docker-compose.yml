@@ -6,7 +6,7 @@ services:
     container_name: sparksight-api
     environment:
       SPARKSIGHT_ALLOWED_ORIGINS: http://localhost:5173
-      SPARKSIGHT_DATA_PATH: /app/data/sales_transactions.csv
+      SPARKSIGHT_DATA_PATH: /app/data/sales.csv
       SPARKSIGHT_SPARK_MASTER: local[*]
     ports:
       - "8000:8000"

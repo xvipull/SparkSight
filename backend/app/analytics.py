@@ -37,7 +37,7 @@ class SalesAnalytics:
     @property
     def sales(self) -> DataFrame:
         if self._sales is None:
-            raw = load_sales_data(get_settings().resolved_data_path.parent / "sales.csv")
+            raw = load_sales_data(get_settings().resolved_data_path)
             self._sales = clean_and_enrich_sales(raw).cache()
             self._sales.count()  # materialize once; subsequent dashboard queries reuse the cache
             logger.info("Cached cleaned SparkSight sales DataFrame")
